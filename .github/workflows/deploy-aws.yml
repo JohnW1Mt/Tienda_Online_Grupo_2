@@ -56,6 +56,21 @@ jobs:
           (cd out && zip -qr ../urponline-publish.zip .)
           ls -lh urponline-publish.zip
 
+      - name: Debug - mostrar el sub del token OIDC
+        run: |
+          TOKEN=$(curl -s -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=sts.amazonaws.com" \
+            | python3 -c "import sys,json;print(json.load(sys.stdin)['value'])")
+          python3 - "$TOKEN" <<'EOF'
+          import sys, base64, json
+          p = sys.argv[1].split('.')[1]
+          p += '=' * (-len(p) % 4)
+          c = json.loads(base64.urlsafe_b64decode(p))
+          print('sub =', c.get('sub'))
+          print('repository =', c.get('repository'))
+          print('owner =', c.get('repository_owner'))
+          EOF
+
       - name: Conectar con AWS (OIDC, sin Access Keys)
         uses: aws-actions/configure-aws-credentials@v4
         with:
